@@ -1,12 +1,29 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import {
+  ThemeProvider,
+  CssBaseline,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { lightTheme, darkTheme } from './theme';
+import ThemeToggleButton from './components/ThemeToggleButton';
+import LandingPage from './pages/LandingPage';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-function App() {
+function TodoApp() {
   const [todos, setTodos] = useState([]);
   const [title, setTitle] = useState('');
+  const [isDark, setIsDark] = useState(false);
 
-  // Fetch todos
   const fetchTodos = async () => {
     const res = await fetch(API_URL);
     const data = await res.json();
@@ -17,49 +34,90 @@ function App() {
     fetchTodos();
   }, []);
 
-  // Add todo
   const addTodo = async () => {
     if (!title) return;
 
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title }),
     });
 
     setTitle('');
     fetchTodos();
   };
 
-  // Delete todo
   const deleteTodo = async (id) => {
-    await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE'
-    });
-
+    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
     fetchTodos();
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Todo App</h1>
+    <ThemeProvider theme={isDark ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          color: 'text.primary',
+          padding: '2rem',
+        }}
+      >
+        <ThemeToggleButton
+          isDark={isDark}
+          onToggle={() => setIsDark((prev) => !prev)}
+        />
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Enter todo"
-      />
-      <button onClick={addTodo}>Add</button>
+        <Typography variant="h4" gutterBottom>
+          Todo App
+        </Typography>
 
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo._id}>
-            {todo.title}
-            <button onClick={() => deleteTodo(todo._id)}>❌</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <TextField
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter todo"
+            size="small"
+            variant="outlined"
+          />
+          <Button variant="contained" onClick={addTodo}>
+            Add
+          </Button>
+        </Box>
+
+        <List disablePadding>
+          {todos.map((todo) => (
+            <ListItem
+              key={todo._id}
+              disableGutters
+              secondaryAction={
+                <IconButton
+                  edge="end"
+                  aria-label="delete"
+                  onClick={() => deleteTodo(todo._id)}
+                  color="error"
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              }
+            >
+              <ListItemText primary={todo.title} />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={<TodoApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
