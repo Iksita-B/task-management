@@ -7,7 +7,7 @@ import {
   Container,
   Fade,
   Slide,
-  Stack,
+  TextField,
 } from '@mui/material';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import logo from '../assets/logo.png';
@@ -15,6 +15,14 @@ import checklistLottie from '../assets/checklist.lottie';
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  const validateEmail = (value) => {
+    if (!value) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email';
+    return '';
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -31,28 +39,51 @@ export default function LandingPage() {
             py: 2,
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            justifyContent: 'space-between',
             boxShadow: '0 1px 0 #E2E8F0',
             zIndex: 10,
           }}
         >
-          <Box
-            component="img"
-            src={logo}
-            alt="Lanzo logo"
-            sx={{ width: 36, height: 36, objectFit: 'contain' }}
-          />
-          <Typography
-            variant="h6"
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              component="img"
+              src={logo}
+              alt="Lanzo logo"
+              sx={{ width: 36, height: 36, objectFit: 'contain' }}
+            />
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: '-0.3px',
+                color: '#2563EB',
+                lineHeight: 1,
+              }}
+            >
+              Lanzo
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            href="/login"
             sx={{
-              fontWeight: 700,
-              letterSpacing: '-0.3px',
+              borderColor: '#2563EB',
               color: '#2563EB',
-              lineHeight: 1,
+              fontWeight: 700,
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              fontSize: '0.875rem',
+              transition: 'all 0.22s ease',
+              '&:hover': {
+                bgcolor: '#EFF6FF',
+                borderColor: '#1D4ED8',
+                color: '#1D4ED8',
+              },
             }}
           >
-            Lanzo
-          </Typography>
+            Log in
+          </Button>
         </Box>
       </Fade>
 
@@ -118,16 +149,49 @@ export default function LandingPage() {
                         focused — all in one clean, intuitive workspace.
                       </Typography>
 
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxWidth: 440 }}>
+                        <TextField
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            setEmailError(validateEmail(e.target.value));
+                          }}
+                          onClick={() => setEmailError(validateEmail(email))}
+                          onBlur={() => setEmailError(validateEmail(email))}
+                          error={!!emailError}
+                          helperText={emailError}
+                          fullWidth
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '50px',
+                              backgroundColor: '#ffffff',
+                              '& fieldset': {
+                                borderColor: '#CBD5E1',
+                              },
+                              '&:hover fieldset': {
+                                borderColor: '#2563EB',
+                              },
+                              '&.Mui-focused fieldset': {
+                                borderColor: '#2563EB',
+                                boxShadow: '0 0 0 3px rgba(37,99,235,0.18)',
+                              },
+                            },
+                            '& .MuiFormHelperText-root': {
+                              ml: '14px',
+                            },
+                          }}
+                        />
                         <Button
                           variant="contained"
                           size="large"
                           href="/signup"
+                          fullWidth
                           sx={{
                             bgcolor: '#2563EB',
                             color: '#ffffff',
                             fontWeight: 700,
-                            px: 4,
                             py: 1.5,
                             borderRadius: 2,
                             fontSize: '0.95rem',
@@ -142,31 +206,7 @@ export default function LandingPage() {
                         >
                           Get started free
                         </Button>
-
-                        <Button
-                          variant="outlined"
-                          size="large"
-                          href="/login"
-                          sx={{
-                            borderColor: '#2563EB',
-                            color: '#2563EB',
-                            fontWeight: 700,
-                            px: 4,
-                            py: 1.5,
-                            borderRadius: 2,
-                            fontSize: '0.95rem',
-                            transition: 'all 0.22s ease',
-                            '&:hover': {
-                              bgcolor: '#EFF6FF',
-                              borderColor: '#1D4ED8',
-                              color: '#1D4ED8',
-                              transform: 'translateY(-2px)',
-                            },
-                          }}
-                        >
-                          Log in
-                        </Button>
-                      </Stack>
+                      </Box>
                     </Box>
                   </Fade>
                 </Box>
