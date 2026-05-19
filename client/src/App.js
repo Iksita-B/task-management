@@ -16,6 +16,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { lightTheme, darkTheme } from './theme';
 import ThemeToggleButton from './components/ThemeToggleButton';
 import LandingPage from './pages/LandingPage';
+import SignupFlowPage from './pages/SignupFlowPage';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -115,6 +116,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/signup" element={<SignupFlowPage />} />
         <Route path="/app" element={<TodoApp />} />
       </Routes>
     </BrowserRouter>

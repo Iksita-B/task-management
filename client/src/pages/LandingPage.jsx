@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  Alert,
   Box,
   Typography,
   Button,
+  CircularProgress,
   Grid,
   Container,
   Fade,
@@ -12,11 +15,15 @@ import {
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import logo from '../assets/logo.png';
 import checklistLottie from '../assets/checklist.lottie';
+import { authApi } from '../lib/api';
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [status, setStatus] = useState({ type: 'info', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateEmail = (value) => {
     if (!value) return 'Email is required';
@@ -27,6 +34,40 @@ export default function LandingPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleGetStarted = async () => {
+    const nextError = validateEmail(email);
+    setEmailError(nextError);
+
+    if (nextError) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus({ type: 'info', message: '' });
+
+    try {
+      await authApi.post('/send-otp', { email: email.trim() });
+      sessionStorage.setItem('lanzo-signup-email', email.trim());
+      sessionStorage.removeItem('lanzo-signup-token');
+      navigate('/signup', {
+        state: {
+          email: email.trim(),
+        },
+      });
+    } catch (error) {
+      const message = error.response?.data?.message || 'Unable to start signup right now';
+
+      if (/user already exists/i.test(message)) {
+        navigate('/login');
+        return;
+      }
+
+      setStatus({ type: 'error', message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -183,10 +224,17 @@ export default function LandingPage() {
                             },
                           }}
                         />
+                        {status.message ? (
+                          <Alert severity={status.type} sx={{ borderRadius: 3 }}>
+                            {status.message}
+                          </Alert>
+                        ) : null}
                         <Button
                           variant="contained"
                           size="large"
-                          href="/signup"
+                          type="button"
+                          onClick={handleGetStarted}
+                          disabled={isSubmitting}
                           fullWidth
                           sx={{
                             bgcolor: '#2563EB',
@@ -204,7 +252,11 @@ export default function LandingPage() {
                             },
                           }}
                         >
-                          Get started free
+                          {isSubmitting ? (
+                            <CircularProgress size={20} sx={{ color: '#FFFFFF' }} />
+                          ) : (
+                            'Get started free'
+                          )}
                         </Button>
                       </Box>
                     </Box>

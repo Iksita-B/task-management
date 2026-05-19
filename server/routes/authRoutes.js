@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 
 const Otp = require("../models/Otp");
+const User = require("../models/User");
 const generateOTP = require("../utils/generateOTP");
 const sendOTPEmail = require("../utils/sendEmail");
 
@@ -44,7 +45,7 @@ router.post("/create-account", async (req, res) => {
     );
 
     const user = await User.create({
-      name,
+      username: name,
       email: decoded.email,
       password: hashedPassword,
     });
@@ -65,7 +66,7 @@ router.post("/create-account", async (req, res) => {
       token,
       user: {
         id: user._id,
-        name: user.name,
+        name: user.username,
         email: user.email,
       },
     });
