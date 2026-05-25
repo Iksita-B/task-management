@@ -48,6 +48,8 @@ import ChecklistRoundedIcon from '@mui/icons-material/ChecklistRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
+import WestRoundedIcon from '@mui/icons-material/WestRounded';
+import EastRoundedIcon from '@mui/icons-material/EastRounded';
 import logo from '../assets/logo.png';
 import { authApi, getAuthorizedConfig, todoApi } from '../lib/api';
 
@@ -1046,6 +1048,8 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [activeDropColumn, setActiveDropColumn] = useState('');
   const [newColumnLabel, setNewColumnLabel] = useState('');
+  const [columnMenuAnchor, setColumnMenuAnchor] = useState(null);
+  const [columnMenuKey, setColumnMenuKey] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -1371,6 +1375,96 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
     }
   };
 
+  const openColumnMenu = (event, columnKey) => {
+    event.stopPropagation();
+    setColumnMenuAnchor(event.currentTarget);
+    setColumnMenuKey(columnKey);
+  };
+
+  const closeColumnMenu = () => {
+    setColumnMenuAnchor(null);
+    setColumnMenuKey('');
+  };
+
+  const saveBoardColumns = async (nextBoardColumns) => {
+    const previousColumns = boardColumns;
+    setBoardColumns(nextBoardColumns);
+
+    try {
+      const response = await authApi.put('/board-columns', { boardColumns: nextBoardColumns });
+      setBoardColumns(response.data.boardColumns || nextBoardColumns);
+      return true;
+    } catch (error) {
+      setBoardColumns(previousColumns);
+      setStatusMessage({ type: 'error', message: error.response?.data?.message || 'Unable to update columns.' });
+      return false;
+    }
+  };
+
+  const handleMoveColumn = async (columnKey, direction) => {
+    const currentIndex = boardColumns.findIndex((column) => column.key === columnKey);
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+
+    if (targetIndex < 0 || targetIndex >= boardColumns.length) {
+      closeColumnMenu();
+      return;
+    }
+
+    const nextColumns = [...boardColumns];
+    const [movedColumn] = nextColumns.splice(currentIndex, 1);
+    nextColumns.splice(targetIndex, 0, movedColumn);
+    closeColumnMenu();
+    await saveBoardColumns(nextColumns);
+  };
+
+  const handleDeleteColumn = async (columnKey) => {
+    if (boardColumns.length <= 1) {
+      setStatusMessage({ type: 'error', message: 'At least one column must remain.' });
+      closeColumnMenu();
+      return;
+    }
+
+    const currentIndex = boardColumns.findIndex((column) => column.key === columnKey);
+
+    if (currentIndex === -1) {
+      closeColumnMenu();
+      return;
+    }
+
+    const fallbackColumn = boardColumns[currentIndex + 1] || boardColumns[currentIndex - 1];
+    const previousColumns = boardColumns;
+    const previousTodos = todos;
+    const nextColumns = boardColumns.filter((column) => column.key !== columnKey);
+    const nextTodos = todos.map((todo) => (todo.status === columnKey ? { ...todo, status: fallbackColumn.key } : todo));
+
+    closeColumnMenu();
+    setBoardColumns(nextColumns);
+    setTodos(nextTodos);
+
+    try {
+      const tasksToMove = todos.filter((todo) => todo.status === columnKey);
+
+      if (tasksToMove.length) {
+        await Promise.all(
+          tasksToMove.map((todo) => todoApi.put(`/${todo._id}`, { status: fallbackColumn.key }))
+        );
+      }
+
+      const response = await authApi.put('/board-columns', { boardColumns: nextColumns });
+      setBoardColumns(response.data.boardColumns || nextColumns);
+      setStatusMessage({ type: 'success', message: 'Column deleted.' });
+    } catch (error) {
+      setBoardColumns(previousColumns);
+      setTodos(previousTodos);
+      setStatusMessage({ type: 'error', message: error.response?.data?.message || 'Unable to delete column.' });
+    }
+  };
+
   if (isLoading) {
     return (
       <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
@@ -1530,6 +1624,9 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
                     {tasksByColumn[column.key]?.length || 0} tasks
                   </Typography>
                 </Box>
+                <IconButton size="small" onClick={(event) => openColumnMenu(event, column.key)}>
+                  <MoreHorizRoundedIcon fontSize="small" />
+                </IconButton>
               </Stack>
 
               <Stack spacing={1.5}>
@@ -1735,6 +1832,31 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
         <MenuItem onClick={handleLogout} sx={{ py: 1.2, gap: 1 }}>
           <LogoutRoundedIcon fontSize="small" />
           Logout
+        </MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={columnMenuAnchor}
+        open={Boolean(columnMenuAnchor)}
+        onClose={closeColumnMenu}
+      >
+        <MenuItem
+          onClick={() => handleMoveColumn(columnMenuKey, 'left')}
+          disabled={boardColumns.findIndex((column) => column.key === columnMenuKey) <= 0}
+        >
+          <WestRoundedIcon fontSize="small" sx={{ mr: 1 }} />
+          Move left
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleMoveColumn(columnMenuKey, 'right')}
+          disabled={boardColumns.findIndex((column) => column.key === columnMenuKey) === boardColumns.length - 1}
+        >
+          <EastRoundedIcon fontSize="small" sx={{ mr: 1 }} />
+          Move right
+        </MenuItem>
+        <MenuItem onClick={() => handleDeleteColumn(columnMenuKey)} sx={{ color: 'error.main' }}>
+          <DeleteOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />
+          Delete column
         </MenuItem>
       </Menu>
 

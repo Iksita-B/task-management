@@ -298,4 +298,53 @@ router.post('/board-columns', authMiddleware, async (req, res) => {
   }
 });
 
+router.put('/board-columns', authMiddleware, async (req, res) => {
+  try {
+    const nextBoardColumns = Array.isArray(req.body?.boardColumns) ? req.body.boardColumns : [];
+
+    if (!nextBoardColumns.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one column is required',
+      });
+    }
+
+    const normalizedColumns = nextBoardColumns.map((column) => ({
+      key: (column?.key || '').trim(),
+      label: (column?.label || '').trim(),
+    }));
+
+    const hasInvalidColumn = normalizedColumns.some((column) => !column.key || !column.label);
+
+    if (hasInvalidColumn) {
+      return res.status(400).json({
+        success: false,
+        message: 'All columns must include a key and label',
+      });
+    }
+
+    const uniqueKeys = new Set(normalizedColumns.map((column) => column.key));
+
+    if (uniqueKeys.size !== normalizedColumns.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Column keys must be unique',
+      });
+    }
+
+    req.user.boardColumns = normalizedColumns;
+    await req.user.save();
+
+    res.json({
+      success: true,
+      boardColumns: req.user.boardColumns,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update board columns',
+    });
+  }
+});
+
 module.exports = router;
