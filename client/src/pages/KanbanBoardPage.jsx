@@ -773,31 +773,36 @@ function TaskDialog({
           )}
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <FormControl fullWidth>
-              <InputLabel id="priority-label">Priority</InputLabel>
-              <Select
-                labelId="priority-label"
-                label="Priority"
-                value={taskDraft.priority}
-                onChange={handleDraftChange('priority')}
-              >
-                {priorityOptions.map((priority) => (
-                  <MenuItem key={priority} value={priority} sx={{ textTransform: 'capitalize' }}>
-                    {priority}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, width: '100%' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                Priority
+              </Typography>
+              <FormControl fullWidth>
+                <Select
+                  value={taskDraft.priority}
+                  onChange={handleDraftChange('priority')}
+                >
+                  {priorityOptions.map((priority) => (
+                    <MenuItem key={priority} value={priority} sx={{ textTransform: 'capitalize' }}>
+                      {priority}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
-            <TextField
-              label="Due date"
-              type="date"
-              value={taskDraft.dueDate}
-              onChange={handleDraftChange('dueDate')}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ min: editingTask ? undefined : getTodayIsoDate() }}
-            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, width: '100%' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                Due date
+              </Typography>
+              <TextField
+                type="date"
+                value={taskDraft.dueDate}
+                onChange={handleDraftChange('dueDate')}
+                fullWidth
+                inputProps={{ min: editingTask ? undefined : getTodayIsoDate() }}
+              />
+            </Box>
           </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -1061,6 +1066,10 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
   const firstName = useMemo(() => {
     const fullName = user?.name || '';
     return fullName.split(' ')[0] || 'there';
+  }, [user]);
+
+  const isGuestSession = useMemo(() => {
+    return user?.email === 'guest@lanzo.local';
   }, [user]);
 
   const editingTask = useMemo(
@@ -1508,7 +1517,7 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
               Lanzo
             </Typography>
             <Typography sx={{ color: 'text.secondary', fontSize: '0.92rem' }}>
-              Hi, {firstName}
+              {isGuestSession ? `Hi guest` : `Hi, ${firstName}`}
             </Typography>
           </Box>
         </Stack>
@@ -1551,7 +1560,9 @@ function KanbanBoardPage({ isDark, onToggleTheme }) {
               Your board
             </Typography>
             <Typography sx={{ color: 'text.secondary', mt: 0.8 }}>
-              Drag tasks between columns, track due dates, and keep related work together.
+              {isGuestSession
+                ? 'You are using a guest session. Create, update, and delete tasks freely without signing in.'
+                : 'Drag tasks between columns, track due dates, and keep related work together.'}
             </Typography>
           </Box>
 

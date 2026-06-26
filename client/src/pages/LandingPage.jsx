@@ -24,6 +24,7 @@ export default function LandingPage() {
   const [emailError, setEmailError] = useState('');
   const [status, setStatus] = useState({ type: 'info', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGuestSubmitting, setIsGuestSubmitting] = useState(false);
 
   const validateEmail = (value) => {
     if (!value) return 'Email is required';
@@ -69,6 +70,24 @@ export default function LandingPage() {
     }
   };
 
+  const handleGuestContinue = async () => {
+    setIsGuestSubmitting(true);
+    setStatus({ type: 'info', message: '' });
+
+    try {
+      const response = await authApi.post('/guest-login');
+      localStorage.setItem('lanzo-token', response.data?.token || '');
+      sessionStorage.removeItem('lanzo-signup-token');
+      sessionStorage.setItem('lanzo-signup-email', 'guest@lanzo.local');
+      navigate('/app');
+    } catch (error) {
+      const message = error.response?.data?.message || 'Unable to start a guest session right now';
+      setStatus({ type: 'error', message });
+    } finally {
+      setIsGuestSubmitting(false);
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Fade in={mounted} timeout={600}>
@@ -104,27 +123,51 @@ export default function LandingPage() {
               Lanzo
             </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            href="/login"
-            sx={{
-              borderColor: '#2563EB',
-              color: '#2563EB',
-              fontWeight: 700,
-              px: 3,
-              py: 1,
-              borderRadius: 2,
-              fontSize: '0.875rem',
-              transition: 'all 0.22s ease',
-              '&:hover': {
-                bgcolor: '#EFF6FF',
-                borderColor: '#1D4ED8',
-                color: '#1D4ED8',
-              },
-            }}
-          >
-            Log in
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              href="/login"
+              sx={{
+                borderColor: '#2563EB',
+                color: '#2563EB',
+                fontWeight: 700,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                transition: 'all 0.22s ease',
+                '&:hover': {
+                  bgcolor: '#EFF6FF',
+                  borderColor: '#1D4ED8',
+                  color: '#1D4ED8',
+                },
+              }}
+            >
+              Log in
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleGuestContinue}
+              disabled={isGuestSubmitting}
+              sx={{
+                bgcolor: '#2563EB',
+                color: '#ffffff',
+                fontWeight: 700,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                fontSize: '0.875rem',
+                boxShadow: '0 4px 16px rgba(37,99,235,0.35)',
+                transition: 'all 0.22s ease',
+                '&:hover': {
+                  bgcolor: '#1D4ED8',
+                  boxShadow: '0 6px 24px rgba(37,99,235,0.45)',
+                },
+              }}
+            >
+              {isGuestSubmitting ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : 'Guest'}
+            </Button>
+          </Box>
         </Box>
       </Fade>
 

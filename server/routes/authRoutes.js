@@ -19,6 +19,25 @@ const ensureBoardColumns = async (user) => {
   return user.boardColumns;
 };
 
+const ensureGuestUser = async () => {
+  const guestEmail = 'guest@lanzo.local';
+  const guestUsername = 'guest';
+
+  let guestUser = await User.findOne({ email: guestEmail });
+
+  if (!guestUser) {
+    const hashedPassword = await bcrypt.hash('guest-password', 10);
+
+    guestUser = await User.create({
+      username: guestUsername,
+      email: guestEmail,
+      password: hashedPassword,
+    });
+  }
+
+  return guestUser;
+};
+
 router.post("/create-account", async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -223,6 +242,41 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.username,
         email: user.email,
+        boardColumns,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
+  }
+});
+
+router.post('/guest-login', async (req, res) => {
+  try {
+    const guestUser = await ensureGuestUser();
+    const boardColumns = await ensureBoardColumns(guestUser);
+    const token = jwt.sign(
+      {
+        userId: guestUser._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '7d',
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'Guest session started',
+      token,
+      user: {
+        id: guestUser._id,
+        name: guestUser.username,
+        email: guestUser.email,
         boardColumns,
       },
     });
