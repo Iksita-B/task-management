@@ -11,18 +11,25 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendOTPEmail = async (email, otp) => {
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "Your Lanzo OTP Code",
-    html: `
-      <div style="font-family:sans-serif">
-        <h2>Your OTP Code</h2>
-        <h1>${otp}</h1>
-        <p>This OTP expires in 5 minutes.</p>
-      </div>
-    `,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your Lanzo OTP Code",
+      html: `
+        <div style="font-family:sans-serif">
+          <h2>Your OTP Code</h2>
+          <h1>${otp}</h1>
+          <p>This OTP expires in 5 minutes.</p>
+        </div>
+      `,
+    });
+
+    console.log("Email sent:", info.messageId);
+  } catch (err) {
+    console.error("Mail Error:", err);
+    throw err;
+  }
 };
 
 module.exports = sendOTPEmail;
